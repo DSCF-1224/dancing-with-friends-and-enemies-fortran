@@ -19,3 +19,8 @@ jobs:
 
       - name: Build
         run: fpm build --verbose
+
+      - name: Run demo (smoke test)
+        run: |
+          mkdir -p result
+          fpm run --example demo --verbose
