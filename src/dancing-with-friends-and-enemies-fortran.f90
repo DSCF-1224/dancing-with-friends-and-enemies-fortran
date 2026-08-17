@@ -608,9 +608,6 @@ module dancing_with_friends_and_enemies
     character(*), intent(inout) :: iomsg
 
 
-    integer :: dancer_index
-
-
     associate( size_vlist => size(vlist) )
 
       if ( size(vlist) /= 0 ) then
@@ -628,31 +625,15 @@ module dancing_with_friends_and_enemies
 
     if (iotype == "LISTDIRECTED") then
 
-      associate( &!
-        write_position => simulation%position(:,:,simulation%indexer%old) &!
-      )
+      write( &!
+        unit   = unit           , &!
+        fmt    = "(2ES25.16E3)" , &!
+        iostat = iostat         , &!
+        iomsg  = iomsg            &!
+      ) &!
+        simulation%position(:,:,simulation%indexer%old)
 
-      do dancer_index = 1, simulation%parameters%num_dancers
-
-          associate( &!
-            dancer_position => write_position(:,dancer_index) &!
-          )
-
-            write( &!
-              unit   = unit             , &!
-              fmt    = "(2ES25.16E3,/)" , &!
-              iostat = iostat           , &!
-              iomsg  = iomsg              &!
-            ) &!
-              dancer_position(:)
-
-            if ( iostat /= 0 ) return
-
-          end associate
-
-        end do
-
-      end associate
+      if ( iostat /= 0 ) return
 
     else
 
