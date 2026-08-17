@@ -21,6 +21,7 @@ module dancing_with_friends_and_enemies
 
   public :: parameters_type
   public :: simulation_type
+  public :: write(formatted)
 
 
   integer, parameter :: friend_index = 1
@@ -110,11 +111,15 @@ module dancing_with_friends_and_enemies
     procedure, pass, public  :: update_dancers
     procedure, pass, private :: update_position
     procedure, pass, private :: update_interaction
-    procedure, pass, private :: write_dancer_position
 
     generic, public :: setup => setup_simulation
 
   end type simulation_type
+
+
+  interface write(formatted)
+    module procedure :: write_formatted_simulation
+  end interface write(formatted)
 
 
 
@@ -444,7 +449,7 @@ module dancing_with_friends_and_enemies
     call handle_stat(iostat, iomsg)
 
 
-    call simulation%write_dancer_position(file_unit)
+    write(file_unit, *) simulation
 
 
     close( &!
@@ -588,34 +593,75 @@ module dancing_with_friends_and_enemies
 
 
 
-  subroutine write_dancer_position(simulation, unit)
+  subroutine write_formatted_simulation(simulation, unit, iotype, vlist, iostat, iomsg)
 
     class(simulation_type), intent(in) :: simulation
 
     integer, intent(in) :: unit
 
+    character(*), intent(in) :: iotype
+
+    integer, intent(in), dimension(:) :: vlist
+
+    integer, intent(out) :: iostat
+
+    character(*), intent(inout) :: iomsg
+
 
     integer :: dancer_index
 
 
-    associate( &!
-      write_position => simulation%position(:,:,simulation%indexer%old) &!
-    )
+    associate( size_vlist => size(vlist) )
 
-    do dancer_index = 1, simulation%parameters%num_dancers
+      if ( size(vlist) /= 0 ) then
 
-        associate( &!
-          dancer_position => write_position(:,dancer_index) &!
-        )
+        iostat = size_vlist
 
-          write(unit, fmt=*) dancer_position(:)
+        write(unit=iomsg, fmt="(A)") "size(vlist) must be less than 2."
 
-        end associate
+        return
 
-      end do
+      end if
 
     end associate
 
-  end subroutine write_dancer_position
+
+    if (iotype == "LISTDIRECTED") then
+
+      associate( &!
+        write_position => simulation%position(:,:,simulation%indexer%old) &!
+      )
+
+      do dancer_index = 1, simulation%parameters%num_dancers
+
+          associate( &!
+            dancer_position => write_position(:,dancer_index) &!
+          )
+
+            write( &!
+              unit   = unit             , &!
+              fmt    = "(2ES25.16E3,/)" , &!
+              iostat = iostat           , &!
+              iomsg  = iomsg              &!
+            ) &!
+              dancer_position(:)
+
+            if ( iostat /= 0 ) return
+
+          end associate
+
+        end do
+
+      end associate
+
+    else
+
+      iostat = 1
+
+      write(unit=iomsg, fmt="(A)") "Unsupported `iotype` was detected."
+
+    end if
+
+  end subroutine write_formatted_simulation
 
 end module dancing_with_friends_and_enemies
