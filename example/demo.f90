@@ -19,6 +19,8 @@ program demo
   type(simulation_type) :: simulation
 
 
+  call report_compiler_info()
+
   call set_random_seed()
 
   call simulation%parameters%setup( &!
@@ -56,11 +58,49 @@ program demo
   call save_data_for_gnuplot
 
 
+  print *, "[simulation]"
   print *, "END"
 
 
 
   contains
+
+
+
+  subroutine report_compiler_info
+
+    write( unit = output_unit, fmt = '(A)' ) "[compiler version]"
+    write( unit = output_unit, fmt = '(A)' ) compiler_version()
+
+
+    block
+
+      character(1), parameter :: str_new_line = new_line('')
+
+
+      character(:), allocatable :: str_compiler_options
+
+      integer :: i
+
+
+      str_compiler_options = compiler_options()
+
+      do
+
+          i = index(str_compiler_options, ' -')
+
+          if (i .eq. 0) exit
+
+          str_compiler_options(i:i) = str_new_line
+
+      end do
+
+      write( unit = output_unit, fmt = '(A)' ) "[compiler options]"
+      write( unit = output_unit, fmt = '(A)' ) str_compiler_options
+
+    end block
+
+  end subroutine report_compiler_info
 
 
 
